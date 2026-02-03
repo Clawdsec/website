@@ -37,3 +37,9 @@ next-env.d.ts
 
 # playwright
 .playwright-mcp/
+
+# serena
+.serena/
+
+# plans (internal)
+docs/plans/
