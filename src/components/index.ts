@@ -1,0 +1,8 @@
+export { default as Navigation } from "./Navigation";
+export { default as Hero } from "./Hero";
+export { default as Features } from "./Features";
+export { default as Scenarios } from "./Scenarios";
+export { default as BeforeAfter } from "./BeforeAfter";
+export { default as CodeExample } from "./CodeExample";
+export { default as Waitlist } from "./Waitlist";
+export { default as Footer } from "./Footer";
