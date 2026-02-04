@@ -3,12 +3,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 
-// LocalStorage keys
-const STORAGE_KEYS = {
-  emails: "clawsec_waitlist_emails",
-  count: "clawsec_waitlist_count",
-} as const;
-
 // Email validation regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -97,67 +91,26 @@ export default function Waitlist() {
   const [waitlistCount, setWaitlistCount] = useState(0);
   const [isClient, setIsClient] = useState(false);
 
-  // Initialize from localStorage on mount
+  // Fetch waitlist count on mount
   useEffect(() => {
     setIsClient(true);
 
-    try {
-      // Get current count from localStorage
-      const storedCount = localStorage.getItem(STORAGE_KEYS.count);
-      if (storedCount) {
-        setWaitlistCount(parseInt(storedCount, 10));
-      } else {
-        // Initialize with a base count for social proof
-        const initialCount = 127;
-        localStorage.setItem(STORAGE_KEYS.count, String(initialCount));
-        setWaitlistCount(initialCount);
+    const fetchCount = async () => {
+      try {
+        const res = await fetch("/api/waitlist");
+        const data = await res.json();
+        setWaitlistCount(data.count || 127);
+      } catch {
+        setWaitlistCount(127);
       }
-    } catch {
-      // localStorage not available, use default
-      setWaitlistCount(127);
-    }
+    };
+
+    fetchCount();
   }, []);
 
   // Validate email format
   const validateEmail = (email: string): boolean => {
     return EMAIL_REGEX.test(email.trim());
-  };
-
-  // Check if email already exists
-  const isEmailAlreadySubmitted = (email: string): boolean => {
-    try {
-      const storedEmails = localStorage.getItem(STORAGE_KEYS.emails);
-      if (storedEmails) {
-        const emails = JSON.parse(storedEmails) as string[];
-        return emails.includes(email.toLowerCase().trim());
-      }
-    } catch {
-      // If parsing fails, assume not submitted
-    }
-    return false;
-  };
-
-  // Save email to localStorage
-  const saveEmail = (email: string) => {
-    try {
-      const normalizedEmail = email.toLowerCase().trim();
-
-      // Get existing emails
-      const storedEmails = localStorage.getItem(STORAGE_KEYS.emails);
-      const emails: string[] = storedEmails ? JSON.parse(storedEmails) : [];
-
-      // Add new email
-      emails.push(normalizedEmail);
-      localStorage.setItem(STORAGE_KEYS.emails, JSON.stringify(emails));
-
-      // Update count
-      const newCount = waitlistCount + 1;
-      localStorage.setItem(STORAGE_KEYS.count, String(newCount));
-      setWaitlistCount(newCount);
-    } catch {
-      // localStorage write failed, but we'll still show success
-      console.error("Failed to save email to localStorage");
-    }
   };
 
   // Handle form submission
@@ -176,23 +129,30 @@ export default function Waitlist() {
       return;
     }
 
-    // Check if already submitted
-    if (isEmailAlreadySubmitted(email)) {
-      setError("This email is already on the waitlist!");
-      return;
-    }
-
-    // Simulate submission
     setIsSubmitting(true);
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-    // Save to localStorage
-    saveEmail(email);
+      const data = await res.json();
 
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+      if (!res.ok) {
+        setError(data.error || "Failed to join waitlist");
+        setIsSubmitting(false);
+        return;
+      }
+
+      setWaitlistCount(data.count);
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+    } catch {
+      setError("Network error. Please try again.");
+      setIsSubmitting(false);
+    }
   };
 
   // Handle input change
