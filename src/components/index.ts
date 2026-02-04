@@ -6,3 +6,4 @@ export { default as BeforeAfter } from "./BeforeAfter";
 export { default as CodeExample } from "./CodeExample";
 export { default as Waitlist } from "./Waitlist";
 export { default as Footer } from "./Footer";
+export { default as FloatingParticles } from "./FloatingParticles";

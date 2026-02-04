@@ -1,6 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useSpring, useTransform } from "framer-motion";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useMousePosition } from "@/hooks";
 
 // Animation variants for staggered entrance
 const containerVariants = {
@@ -28,9 +30,72 @@ const itemVariants = {
 
 // Shield-Crab Mascot SVG Component with animations
 function ShieldCrabMascot() {
+  const { normalizedX, normalizedY, isReducedMotion } = useMousePosition();
+  const [isInView, setIsInView] = useState(false);
+  const [isWaving, setIsWaving] = useState(false);
+  const mascotRef = useRef<HTMLDivElement>(null);
+  const waveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Maximum eye offset in pixels (±5px for hero mascot)
+  const MAX_EYE_OFFSET = 5;
+
+  // Spring configuration for smooth eye movement
+  const springConfig = { stiffness: 150, damping: 15, mass: 0.5 };
+
+  // Create spring-animated values for smooth eye tracking
+  const targetEyeX = isInView && !isReducedMotion ? normalizedX * MAX_EYE_OFFSET : 0;
+  const targetEyeY = isInView && !isReducedMotion ? normalizedY * MAX_EYE_OFFSET : 0;
+
+  const eyeSpringX = useSpring(targetEyeX, springConfig);
+  const eyeSpringY = useSpring(targetEyeY, springConfig);
+
+  // Update spring targets when mouse moves
+  useEffect(() => {
+    eyeSpringX.set(targetEyeX);
+    eyeSpringY.set(targetEyeY);
+  }, [targetEyeX, targetEyeY, eyeSpringX, eyeSpringY]);
+
+  // Intersection Observer to detect when mascot is visible
+  useEffect(() => {
+    const currentRef = mascotRef.current;
+    if (!currentRef) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(currentRef);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  // Handle click for wave animation
+  const handleClick = useCallback(() => {
+    if (isReducedMotion) return;
+    setIsWaving(true);
+    // Clear any existing timeout
+    if (waveTimeoutRef.current) clearTimeout(waveTimeoutRef.current);
+    // Reset after animation completes
+    waveTimeoutRef.current = setTimeout(() => setIsWaving(false), 600);
+  }, [isReducedMotion]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (waveTimeoutRef.current) clearTimeout(waveTimeoutRef.current);
+    };
+  }, []);
+
   return (
     <motion.div
-      className="relative"
+      ref={mascotRef}
+      className="relative cursor-pointer"
+      onClick={handleClick}
       animate={{
         y: [0, -15, 0],
       }}
@@ -128,11 +193,24 @@ function ShieldCrabMascot() {
         <ellipse cx="140" cy="158" rx="45" ry="28" fill="#ff6b6b" fillOpacity="0.4" />
         <ellipse cx="140" cy="152" rx="30" ry="15" fill="#ff8080" fillOpacity="0.3" />
 
-        {/* Crab claws - Left */}
+        {/* Crab claws - Left with wave animation on click */}
         <motion.g
           initial={{ rotate: -10, x: -5 }}
-          animate={{ rotate: [0, -8, 0], x: [0, -3, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          animate={
+            isWaving
+              ? {
+                  rotate: [0, -25, 15, -20, 10, -5, 0],
+                  x: [0, -8, 5, -6, 3, -2, 0],
+                  y: [0, -5, 3, -4, 2, -1, 0],
+                }
+              : { rotate: [0, -8, 0], x: [0, -3, 0] }
+          }
+          transition={
+            isWaving
+              ? { duration: 0.6, ease: "easeOut" }
+              : { duration: 2, repeat: Infinity, ease: "easeInOut" }
+          }
+          style={{ originX: "85px", originY: "115px" }}
         >
           <path
             d="M70 140C45 120 30 100 35 85C42 70 60 75 75 95L85 115"
@@ -206,19 +284,50 @@ function ShieldCrabMascot() {
         <path d="M115 135L108 115" stroke="#ff4d4d" strokeWidth="8" strokeLinecap="round" />
         <path d="M165 135L172 115" stroke="#ff4d4d" strokeWidth="8" strokeLinecap="round" />
 
-        {/* Eyes */}
+        {/* Eyes with cursor tracking */}
         <motion.g
           animate={{ scale: [1, 1.1, 1] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         >
+          {/* Eye sockets (static) */}
           <circle cx="108" cy="108" r="14" fill="#050810" />
           <circle cx="172" cy="108" r="14" fill="#050810" />
-          {/* Eye highlights */}
-          <circle cx="112" cy="104" r="5" fill="white" />
-          <circle cx="176" cy="104" r="5" fill="white" />
-          {/* Smaller highlights */}
-          <circle cx="105" cy="112" r="2" fill="white" fillOpacity="0.5" />
-          <circle cx="169" cy="112" r="2" fill="white" fillOpacity="0.5" />
+          {/* Eye highlights (move with cursor) */}
+          <motion.circle
+            r="5"
+            fill="white"
+            style={{
+              cx: useTransform(eyeSpringX, (x) => 112 + x),
+              cy: useTransform(eyeSpringY, (y) => 104 + y),
+            }}
+          />
+          <motion.circle
+            r="5"
+            fill="white"
+            style={{
+              cx: useTransform(eyeSpringX, (x) => 176 + x),
+              cy: useTransform(eyeSpringY, (y) => 104 + y),
+            }}
+          />
+          {/* Smaller highlights (move with cursor) */}
+          <motion.circle
+            r="2"
+            fill="white"
+            fillOpacity="0.5"
+            style={{
+              cx: useTransform(eyeSpringX, (x) => 105 + x),
+              cy: useTransform(eyeSpringY, (y) => 112 + y),
+            }}
+          />
+          <motion.circle
+            r="2"
+            fill="white"
+            fillOpacity="0.5"
+            style={{
+              cx: useTransform(eyeSpringX, (x) => 169 + x),
+              cy: useTransform(eyeSpringY, (y) => 112 + y),
+            }}
+          />
         </motion.g>
 
         {/* Mouth/smile */}

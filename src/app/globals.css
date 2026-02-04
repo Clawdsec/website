@@ -80,6 +80,16 @@ input:-webkit-autofill:active {
   caret-color: #ffffff !important;
 }
 
+/* Breathing glow animation keyframes */
+@keyframes breathing-glow {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* Utility classes */
 @layer utilities {
   .text-balance {
@@ -108,5 +118,44 @@ input:-webkit-autofill:active {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Breathing glow animation utility */
+  .animate-breathing-glow {
+    animation: breathing-glow 2s ease-in-out infinite;
+  }
+}
+
+/* Floating particles animation */
+@keyframes particle-float {
+  0% {
+    transform: translateY(100vh) translateX(0);
+    opacity: 0.3;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-100px) translateX(var(--particle-sway));
+    opacity: 0.3;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-breathing-glow {
+    animation: none;
+    opacity: 0.8;
+  }
+
+  .floating-particle {
+    animation: none !important;
+    opacity: 0.2 !important;
   }
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { useMousePosition } from "@/hooks";
 
 const navLinks = [
   { name: "Features", href: "#features" },
@@ -13,6 +14,32 @@ const navLinks = [
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
+
+  // Mouse position for eye tracking
+  const { normalizedX, normalizedY, isReducedMotion } = useMousePosition();
+
+  // Animation controller for claw wave
+  const clawControls = useAnimation();
+
+  // Calculate eye offset (only when scrolled and not reduced motion)
+  const maxEyeOffset = 2; // px
+  const eyeOffsetX = isScrolled && !isReducedMotion ? normalizedX * maxEyeOffset : 0;
+  const eyeOffsetY = isScrolled && !isReducedMotion ? normalizedY * maxEyeOffset : 0;
+
+  // Claw wave animation handler
+  const handleLogoClick = async () => {
+    if (isReducedMotion) return;
+
+    // Trigger wave animation on left claw
+    await clawControls.start({
+      rotate: [0, -15, 10, -8, 5, 0],
+      transition: {
+        duration: 0.6,
+        ease: "easeInOut",
+      },
+    });
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -74,8 +101,11 @@ export default function Navigation() {
               href="#"
               onClick={(e) => {
                 e.preventDefault();
+                handleLogoClick();
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
+              onMouseEnter={() => setIsLogoHovered(true)}
+              onMouseLeave={() => setIsLogoHovered(false)}
               className="flex items-center gap-2 group"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -90,38 +120,76 @@ export default function Navigation() {
                   xmlns="http://www.w3.org/2000/svg"
                   className="group-hover:scale-110 transition-transform duration-300"
                 >
-                  {/* Shield background */}
+                  {/* Shield background with breathing glow */}
                   <path
                     d="M16 2L4 7V14.5C4 21.5 9 27.5 16 30C23 27.5 28 21.5 28 14.5V7L16 2Z"
-                    fill="url(#shield-gradient)"
+                    fill="url(#shield-gradient-nav)"
                     fillOpacity="0.2"
-                    stroke="url(#shield-gradient)"
+                    stroke="url(#shield-gradient-nav)"
                     strokeWidth="1.5"
+                    className={`${!isReducedMotion ? "animate-breathing-glow" : ""}`}
+                    style={{
+                      filter: isLogoHovered && !isReducedMotion ? "drop-shadow(0 0 6px rgba(255, 77, 77, 0.6))" : undefined,
+                    }}
                   />
                   {/* Crab body */}
                   <ellipse cx="16" cy="17" rx="6" ry="4" fill="#ff4d4d" />
-                  {/* Crab claws */}
-                  <path
+                  {/* Left claw with wave animation */}
+                  <motion.path
                     d="M8 14C6 12 5 10 6.5 9C8 8 9.5 9.5 10.5 11.5"
                     stroke="#ff4d4d"
                     strokeWidth="2"
                     strokeLinecap="round"
+                    animate={clawControls}
+                    style={{ transformOrigin: "10.5px 11.5px" }}
                   />
+                  {/* Right claw */}
                   <path
                     d="M24 14C26 12 27 10 25.5 9C24 8 22.5 9.5 21.5 11.5"
                     stroke="#ff4d4d"
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
-                  {/* Crab eyes */}
-                  <circle cx="13" cy="15" r="1.5" fill="#050810" />
-                  <circle cx="19" cy="15" r="1.5" fill="#050810" />
-                  {/* Eye shine */}
-                  <circle cx="13.5" cy="14.5" r="0.5" fill="white" />
-                  <circle cx="19.5" cy="14.5" r="0.5" fill="white" />
+                  {/* Crab eyes with tracking and hover scale */}
+                  <motion.g
+                    animate={{
+                      scale: isLogoHovered && !isReducedMotion ? 1.15 : 1,
+                    }}
+                    transition={{ duration: 0.2 }}
+                    style={{ transformOrigin: "16px 15px" }}
+                  >
+                    {/* Left eye */}
+                    <circle
+                      cx={13 + eyeOffsetX}
+                      cy={15 + eyeOffsetY}
+                      r="1.5"
+                      fill="#050810"
+                    />
+                    {/* Right eye */}
+                    <circle
+                      cx={19 + eyeOffsetX}
+                      cy={15 + eyeOffsetY}
+                      r="1.5"
+                      fill="#050810"
+                    />
+                    {/* Left eye shine */}
+                    <circle
+                      cx={13.5 + eyeOffsetX}
+                      cy={14.5 + eyeOffsetY}
+                      r="0.5"
+                      fill="white"
+                    />
+                    {/* Right eye shine */}
+                    <circle
+                      cx={19.5 + eyeOffsetX}
+                      cy={14.5 + eyeOffsetY}
+                      r="0.5"
+                      fill="white"
+                    />
+                  </motion.g>
                   <defs>
                     <linearGradient
-                      id="shield-gradient"
+                      id="shield-gradient-nav"
                       x1="4"
                       y1="2"
                       x2="28"
