@@ -36,11 +36,13 @@ function ShieldCrabMascot() {
   const mascotRef = useRef<HTMLDivElement>(null);
   const waveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Maximum eye offset in pixels (±5px for hero mascot)
-  const MAX_EYE_OFFSET = 5;
+  // Maximum eye offset in pixels (±12px for dramatic pupil movement across eyeball)
+  const MAX_EYE_OFFSET = 12;
 
   // Spring configuration for smooth eye movement
   const springConfig = { stiffness: 150, damping: 15, mass: 0.5 };
+  // Laggier spring for secondary highlights - trails behind main pupil
+  const secondarySpringConfig = { stiffness: 80, damping: 20, mass: 1.0 };
 
   // Create spring-animated values for smooth eye tracking
   const targetEyeX = isInView && !isReducedMotion ? normalizedX * MAX_EYE_OFFSET : 0;
@@ -48,12 +50,17 @@ function ShieldCrabMascot() {
 
   const eyeSpringX = useSpring(targetEyeX, springConfig);
   const eyeSpringY = useSpring(targetEyeY, springConfig);
+  // Secondary springs with laggier physics for trailing effect
+  const secondarySpringX = useSpring(targetEyeX, secondarySpringConfig);
+  const secondarySpringY = useSpring(targetEyeY, secondarySpringConfig);
 
   // Update spring targets when mouse moves
   useEffect(() => {
     eyeSpringX.set(targetEyeX);
     eyeSpringY.set(targetEyeY);
-  }, [targetEyeX, targetEyeY, eyeSpringX, eyeSpringY]);
+    secondarySpringX.set(targetEyeX);
+    secondarySpringY.set(targetEyeY);
+  }, [targetEyeX, targetEyeY, eyeSpringX, eyeSpringY, secondarySpringX, secondarySpringY]);
 
   // Intersection Observer to detect when mascot is visible
   useEffect(() => {
@@ -309,14 +316,14 @@ function ShieldCrabMascot() {
               cy: useTransform(eyeSpringY, (y) => 104 + y),
             }}
           />
-          {/* Smaller highlights (move with cursor) */}
+          {/* Smaller highlights (lag behind main pupils for sloshy effect) */}
           <motion.circle
             r="2"
             fill="white"
             fillOpacity="0.5"
             style={{
-              cx: useTransform(eyeSpringX, (x) => 105 + x),
-              cy: useTransform(eyeSpringY, (y) => 112 + y),
+              cx: useTransform(secondarySpringX, (x) => 105 + x),
+              cy: useTransform(secondarySpringY, (y) => 112 + y),
             }}
           />
           <motion.circle
@@ -324,8 +331,8 @@ function ShieldCrabMascot() {
             fill="white"
             fillOpacity="0.5"
             style={{
-              cx: useTransform(eyeSpringX, (x) => 169 + x),
-              cy: useTransform(eyeSpringY, (y) => 112 + y),
+              cx: useTransform(secondarySpringX, (x) => 169 + x),
+              cy: useTransform(secondarySpringY, (y) => 112 + y),
             }}
           />
         </motion.g>
