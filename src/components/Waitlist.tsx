@@ -303,10 +303,10 @@ export default function Waitlist() {
                       onChange={handleInputChange}
                       placeholder="Enter your email"
                       disabled={isSubmitting}
-                      className={`w-full px-5 py-4 bg-bg-card/80 backdrop-blur-sm border rounded-xl font-satoshi text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 focus:border-accent-cyan/50 transition-all duration-200 disabled:opacity-50 ${
+                      className={`w-full px-5 py-4 bg-[#111827] border rounded-lg font-satoshi text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 focus:border-accent-cyan/50 transition-all duration-200 disabled:opacity-50 ${
                         error
                           ? "border-accent-coral/50 focus:ring-accent-coral/50 focus:border-accent-coral/50"
-                          : "border-white/10"
+                          : "border-gray-600"
                       }`}
                     />
                   </div>
